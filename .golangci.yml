@@ -38,3 +38,4 @@ linters:
     - testpackage
     - thelper
     - tparallel
+    - paralleltest
