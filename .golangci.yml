@@ -1,0 +1,39 @@
+version: "2"
+run:
+  relative-path-mode: gitroot
+  modules-download-mode: readonly
+output:
+  path-mode: "abs"
+severity:
+  default: error
+formatters:
+  enable:
+    - gci
+    - goimports
+linters:
+  default: none
+  enable:
+    - govet
+    - gosec
+    - errcheck
+    - unused
+    - nakedret
+    - musttag
+    - mnd
+    - interfacebloat
+    - exhaustive
+    - exhaustruct
+    - errchkjson
+    - asciicheck
+    - bidichk
+    - bodyclose
+    - canonicalheader
+    - containedctx
+    - contextcheck
+    - copyloopvar
+    - wsl_v5
+    - testableexamples
+    - testifylint
+    - testpackage
+    - thelper
+    - tparallel
