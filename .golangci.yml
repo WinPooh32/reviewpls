@@ -16,6 +16,7 @@ linters:
     - govet
     - gosec
     - errcheck
+    - wrapcheck
     - unused
     - nakedret
     - musttag
