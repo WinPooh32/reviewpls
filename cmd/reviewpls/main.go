@@ -3,6 +3,7 @@ package reviewpls
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"flag"
 	"fmt"
 	"os"
@@ -14,6 +15,8 @@ import (
 	"github.com/WinPooh32/reviewpls/internal/gitrepo"
 	"github.com/openai/openai-go/v2"
 )
+
+var errHasReviewComments = errors.New("has review comments")
 
 func main() {
 	exitCode := 0
@@ -52,7 +55,13 @@ func main() {
 
 	if err := run(ctx, mr, pf); err != nil {
 		fmt.Fprintln(os.Stderr, err.Error())
-		exitCode = 1
+
+		if errors.Is(err, errHasReviewComments) {
+			exitCode = 2
+		} else {
+			exitCode = 1
+		}
+
 		return
 	}
 }
@@ -94,6 +103,10 @@ func run(ctx context.Context, mr MergeRequest, pf PipelineFunctions) error {
 		return fmt.Errorf("reviewer: analyze summaries: %w", err)
 	}
 
+	if len(comments) == 0 {
+		return nil
+	}
+
 	bs, err := json.Marshal(&comments)
 	if err != nil {
 		return fmt.Errorf("marshal json of comments: %w", err)
@@ -103,5 +116,5 @@ func run(ctx context.Context, mr MergeRequest, pf PipelineFunctions) error {
 		return fmt.Errorf("print comments: %w", err)
 	}
 
-	return nil
+	return errHasReviewComments
 }
