@@ -2,7 +2,10 @@ module github.com/WinPooh32/reviewpls
 
 go 1.25.0
 
-require github.com/WinPooh32/git v1.24.5
+require (
+	github.com/WinPooh32/git v1.24.5
+	github.com/openai/openai-go/v2 v2.1.0
+)
 
 require (
 	dario.cat/mergo v1.0.1 // indirect
@@ -46,6 +49,10 @@ require (
 	github.com/sergi/go-diff v1.3.2-0.20230802210424-5b0b94c5c0d3 // indirect
 	github.com/skeema/knownhosts v1.3.1 // indirect
 	github.com/syndtr/goleveldb v1.0.0 // indirect
+	github.com/tidwall/gjson v1.14.4 // indirect
+	github.com/tidwall/match v1.1.1 // indirect
+	github.com/tidwall/pretty v1.2.1 // indirect
+	github.com/tidwall/sjson v1.2.5 // indirect
 	github.com/unknwon/com v1.0.1 // indirect
 	github.com/xanzy/ssh-agent v0.3.3 // indirect
 	golang.org/x/crypto v0.37.0 // indirect
