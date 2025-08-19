@@ -1,9 +1,9 @@
-package format_test
+package source_test
 
 import (
 	"testing"
 
-	"github.com/WinPooh32/reviewpls/internal/format"
+	"github.com/WinPooh32/reviewpls/internal/source"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -75,19 +75,19 @@ func TestDetectByExt(t *testing.T) {
 	tests := []struct {
 		name  string
 		names []string
-		want  format.Format
+		want  source.Format
 	}{
-		{"binary", binaryFiles, format.Binary},
-		{"text", textFiles, format.Text},
-		{"go", goFiles, format.Go},
-		{"c", cFiles, format.C},
-		{"cpp", cppFiles, format.Cpp},
-		{"python", pythonFiles, format.Python},
-		{"javascript", javascriptFiles, format.Javascript},
-		{"json", jsonFiles, format.Json},
-		{"html", htmlFiles, format.Html},
-		{"rust", rustFiles, format.Rust},
-		{"unknown", []string{".blender"}, format.Unknown},
+		{"binary", binaryFiles, source.Binary},
+		{"text", textFiles, source.Text},
+		{"go", goFiles, source.Go},
+		{"c", cFiles, source.C},
+		{"cpp", cppFiles, source.Cpp},
+		{"python", pythonFiles, source.Python},
+		{"javascript", javascriptFiles, source.Javascript},
+		{"json", jsonFiles, source.Json},
+		{"html", htmlFiles, source.Html},
+		{"rust", rustFiles, source.Rust},
+		{"unknown", []string{".blender"}, source.Unknown},
 	}
 
 	for _, tt := range tests {
@@ -95,7 +95,7 @@ func TestDetectByExt(t *testing.T) {
 			t.Run(tt.name+"_"+filename, func(t *testing.T) {
 				t.Parallel()
 
-				got := format.DetectByExt(filename)
+				got := source.DetectByExt(filename)
 				assert.Equal(t, tt.want.String(), got.String())
 			})
 		}
