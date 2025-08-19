@@ -129,6 +129,15 @@ func (r *Repository) Close() error {
 	return nil
 }
 
+func (r *Repository) DiffFiles(_ context.Context, baseBranch, headBranch string) ([]string, error) {
+	files, err := r.repo.GetFilesChangedBetween(baseBranch, headBranch)
+	if err != nil {
+		return nil, fmt.Errorf("git repo: get files changed: %w", err)
+	}
+
+	return files, nil
+}
+
 func (r *Repository) DiffCommits(_ context.Context, baseBranch, headBranch string) (map[string]*git.Commit, error) {
 	compInfo, err := r.repo.GetCompareInfo(r.rootDir, baseBranch, headBranch, true, false)
 	if err != nil {
