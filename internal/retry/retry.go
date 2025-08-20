@@ -43,7 +43,6 @@ func Run(ctx context.Context, fn func() error, opts ...OptionFunc) error {
 		if o.delay.Set() && i > 0 {
 			select {
 			case <-time.After(o.delay.Value()):
-				fmt.Println("delay", o.delay.Value())
 			case <-ctx.Done():
 				return ctx.Err()
 			}
@@ -65,6 +64,7 @@ func Run(ctx context.Context, fn func() error, opts ...OptionFunc) error {
 		}
 
 		if err != nil {
+			fmt.Println(err)
 			continue
 		}
 

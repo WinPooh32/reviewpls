@@ -1,4 +1,4 @@
-package reviewpls
+package main
 
 import (
 	"context"
@@ -8,12 +8,20 @@ import (
 	"fmt"
 	"os"
 	"os/signal"
+	"strings"
 
 	"github.com/WinPooh32/reviewpls/cmd/reviewpls/functions"
 	changesdescriber "github.com/WinPooh32/reviewpls/cmd/reviewpls/functions/changes-describer"
 	"github.com/WinPooh32/reviewpls/cmd/reviewpls/functions/reviewer"
 	"github.com/WinPooh32/reviewpls/internal/gitrepo"
 	"github.com/openai/openai-go/v2"
+)
+
+const maxRetries = 10
+
+const (
+	errorCodeUnknown     = 1
+	errorCodeHasComments = 2
 )
 
 var errHasReviewComments = errors.New("has review comments")
@@ -36,7 +44,9 @@ func main() {
 	repo, err := gitrepo.OpenRepository(ctx, *gitRootDir)
 	if err != nil {
 		fmt.Fprintln(os.Stderr, err.Error())
-		exitCode = 1
+
+		exitCode = errorCodeUnknown
+
 		return
 	}
 
@@ -48,8 +58,17 @@ func main() {
 		HeadBranch: *gitHeadBaranch,
 	}
 
+	cd, err := changesdescriber.NewChangesDescriberOpenAI(
+		changesdescriber.ChangesDescriberOpenAIConfig{
+			Model:            *model,
+			RetryMaxAttempts: maxRetries,
+			RetryDelay:       0,
+		},
+		openaiClient,
+	)
+
 	pf := PipelineFunctions{
-		ChangesDescriber: changesdescriber.NewChangesDescriberOpenAI(openaiClient, *model),
+		ChangesDescriber: cd,
 		Reviewer:         reviewer.NewReviewerOpenAI(openaiClient, *model),
 	}
 
@@ -57,9 +76,9 @@ func main() {
 		fmt.Fprintln(os.Stderr, err.Error())
 
 		if errors.Is(err, errHasReviewComments) {
-			exitCode = 2
+			exitCode = errorCodeHasComments
 		} else {
-			exitCode = 1
+			exitCode = errorCodeUnknown
 		}
 
 		return
@@ -87,10 +106,28 @@ func run(ctx context.Context, mr MergeRequest, pf PipelineFunctions) error {
 		return nil
 	}
 
+	diffCommits, err := mr.Repo.DiffCommits(ctx, mr.BaseBranch, mr.HeadBranch)
+	if err != nil {
+		return fmt.Errorf("get repo diff commits; %w", err)
+	}
+
 	summaries := make([]functions.ChangesSummary, 0, len(files))
 
 	for _, file := range files {
-		summ, err := pf.ChangesDescriber.DescribeFileChanges(ctx, file)
+		if strings.Contains(file, "pb.go") || strings.Contains(file, "gen.go") {
+			continue
+		}
+
+		patch, err := mr.Repo.BlamePatch(ctx, mr.HeadBranch, diffCommits, file)
+		if err != nil {
+			return fmt.Errorf("get repo blame patch for the file %q: %w", file, err)
+		}
+
+		if len(patch.Commits) == 0 {
+			continue
+		}
+
+		summ, err := pf.ChangesDescriber.DescribeFileChanges(ctx, file, patch.String())
 		if err != nil {
 			return fmt.Errorf("describe file changes of %q: %w", file, err)
 		}
@@ -98,7 +135,7 @@ func run(ctx context.Context, mr MergeRequest, pf PipelineFunctions) error {
 		summaries = append(summaries, summ)
 	}
 
-	comments, err := pf.Reviewer.AnalyzeChangesSummary(summaries)
+	comments, err := pf.Reviewer.AnalyzeChangesSummary(ctx, summaries)
 	if err != nil {
 		return fmt.Errorf("reviewer: analyze summaries: %w", err)
 	}

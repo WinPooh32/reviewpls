@@ -1,6 +1,8 @@
 package reviewer
 
 import (
+	"context"
+
 	"github.com/WinPooh32/reviewpls/cmd/reviewpls/functions"
 	"github.com/openai/openai-go/v2"
 )
@@ -17,6 +19,6 @@ func NewReviewerOpenAI(cli openai.Client, model string) *ReviewerOpenAI {
 	}
 }
 
-func (r *ReviewerOpenAI) AnalyzeChangesSummary(summaries []functions.ChangesSummary) ([]functions.ReviewComment, error) {
+func (r *ReviewerOpenAI) AnalyzeChangesSummary(ctx context.Context, summaries []functions.ChangesSummary) ([]functions.ReviewComment, error) {
 	panic("TODO: Implement")
 }

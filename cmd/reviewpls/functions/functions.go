@@ -5,7 +5,7 @@ import (
 )
 
 type ChangeCommentary struct {
-	Line string
+	Line int
 	Text string
 }
 
@@ -16,15 +16,15 @@ type ChangesSummary struct {
 }
 
 type ChangesDescriber interface {
-	DescribeFileChanges(ctx context.Context, file string) (ChangesSummary, error)
+	DescribeFileChanges(ctx context.Context, file, filePatch string) (ChangesSummary, error)
 }
 
 type ReviewComment struct {
 	File string
-	Line string
+	Line int
 	Text string
 }
 
 type Reviewer interface {
-	AnalyzeChangesSummary(summaries []ChangesSummary) ([]ReviewComment, error)
+	AnalyzeChangesSummary(ctx context.Context, summaries []ChangesSummary) ([]ReviewComment, error)
 }

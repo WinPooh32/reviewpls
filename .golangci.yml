@@ -19,7 +19,6 @@ linters:
     - wrapcheck
     - unused
     - nakedret
-    - musttag
     - mnd
     - interfacebloat
     - exhaustive
@@ -43,6 +42,10 @@ linters:
     wrapcheck:
       ignore-package-globs:
         - context
+        - github.com/WinPooh32/reviewpls/internal/retry
     testifylint:
       disable:
         - require-error
+    exhaustruct:
+      exclude:
+        - ^github.com/openai/openai-go/v2.*

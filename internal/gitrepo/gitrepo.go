@@ -130,7 +130,12 @@ func (r *Repository) Close() error {
 }
 
 func (r *Repository) DiffFiles(_ context.Context, baseBranch, headBranch string) ([]string, error) {
-	files, err := r.repo.GetFilesChangedBetween(baseBranch, headBranch)
+	commit, _, err := r.repo.GetMergeBase("", baseBranch, headBranch)
+	if err != nil {
+		return nil, fmt.Errorf("git repo: get merge base: %w", err)
+	}
+
+	files, err := r.repo.GetFilesChangedBetween(commit, headBranch)
 	if err != nil {
 		return nil, fmt.Errorf("git repo: get files changed: %w", err)
 	}
