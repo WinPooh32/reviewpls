@@ -39,3 +39,10 @@ linters:
     - thelper
     - tparallel
     - paralleltest
+  settings:
+    wrapcheck:
+      ignore-package-globs:
+        - context
+    testifylint:
+      disable:
+        - require-error

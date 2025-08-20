@@ -11,6 +11,8 @@ github.com/ProtonMail/go-crypto v1.2.0 h1:+PhXXn4SPGd+qk76TlEePBfOfivE0zkWFenhGh
 github.com/ProtonMail/go-crypto v1.2.0/go.mod h1:9whxjD8Rbs29b4XWbB8irEcE8KHMqaR2e7GWU1R+/PE=
 github.com/WinPooh32/git v1.24.5 h1:6SdM3DlOGDYMShkVaIrNp3m11eCQBP/K4G3DJkiOiXg=
 github.com/WinPooh32/git v1.24.5/go.mod h1:p8Hq6hEEFV/KGrlz0DWxB1xGZS7e3U14iJqTvK/ASyU=
+github.com/WinPooh32/opt v0.0.2 h1:/DmAiukdv9p9zpzxdRS/29WQTch8mepKKvfCqljwhIc=
+github.com/WinPooh32/opt v0.0.2/go.mod h1:2TvWkEKebCwoC7AodEIyY6A+zAYGKGGV5ZmU1ETKiiI=
 github.com/anmitsu/go-shlex v0.0.0-20200514113438-38f4b401e2be h1:9AeTilPcZAjCFIImctFaOjnTIavg87rW78vTPkQqLI8=
 github.com/anmitsu/go-shlex v0.0.0-20200514113438-38f4b401e2be/go.mod h1:ySMOLuWl6zY27l47sB3qLNK6tF2fkHG55UZxx8oIVo4=
 github.com/armon/go-socks5 v0.0.0-20160902184237-e75332964ef5 h1:0CwZNZbxp69SHPdPJAN/hZIm0C4OItdklCFmMRWYpio=
