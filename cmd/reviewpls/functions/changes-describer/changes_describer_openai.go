@@ -11,6 +11,7 @@ import (
 	"github.com/WinPooh32/reviewpls/cmd/reviewpls/functions/changes-describer/prompts"
 	"github.com/WinPooh32/reviewpls/internal/prompt"
 	"github.com/WinPooh32/reviewpls/internal/retry"
+	sc "github.com/WinPooh32/reviewpls/internal/schema"
 	"github.com/openai/openai-go/v2"
 	"github.com/openai/openai-go/v2/shared"
 )
@@ -66,6 +67,42 @@ func (c *ChangesDescriberOpenAI) DescribeFileChanges(ctx context.Context, file, 
 }
 
 func (c *ChangesDescriberOpenAI) describeFileChanges(ctx context.Context, file, filePatch string) (summ functions.ChangesSummary, err error) {
+	JSONSchemaRoot := sc.Object().
+		AdditionalProperties(false).
+		Required(
+			"Summary",
+			"Comments",
+		).
+		Property("Summary",
+			sc.String().
+				Description("Brief description of the changes."),
+		).
+		Property("Comments",
+			sc.Array().
+				MinItems(0).
+				Items(
+					sc.Object().
+						AdditionalProperties(false).
+						Required(
+							"Line",
+							"Text",
+						).
+						Property("Line",
+							sc.Integer().
+								Description("Start line number of the commented code."),
+						).
+						Property("Text",
+							sc.String().
+								Description("Commentary content text."),
+						),
+				),
+		)
+
+	messageSchema, err := json.Marshal(&JSONSchemaRoot)
+	if err != nil {
+		return summ, fmt.Errorf("encode schema json: %w", err)
+	}
+
 	pc, ok := c.prompts["context"]
 	if !ok {
 		return summ, errors.Join(errors.New("can't find 'context' prompt"), retry.ErrFatal)
@@ -91,7 +128,9 @@ func (c *ChangesDescriberOpenAI) describeFileChanges(ctx context.Context, file, 
 		return summ, errors.Join(fmt.Errorf("execute `describe_changes_0` prompt template: %w", err), retry.ErrFatal)
 	}
 
-	task1, err := pdc1.Execute(nil)
+	task1, err := pdc1.Execute(map[string]any{
+		"JSONSchema": messageSchema,
+	})
 	if err != nil {
 		return summ, errors.Join(fmt.Errorf("execute `describe_changes_1` prompt template: %w", err), retry.ErrFatal)
 	}
@@ -128,37 +167,7 @@ func (c *ChangesDescriberOpenAI) describeFileChanges(ctx context.Context, file, 
 			JSONSchema: shared.ResponseFormatJSONSchemaJSONSchemaParam{
 				Name:   "ChangesReview",
 				Strict: openai.Bool(true),
-				Schema: json.RawMessage(`
-{
-  "type": "object",
-  "properties": {
-    "Summary": {
-      "type": "string",
-      "description": "Brief description of the changes."
-    },
-    "Comments": {
-      "type": "array",
-      "minItems": 0,
-      "items": {
-        "type": "object",
-        "properties": {
-          "Line": {
-            "type": "integer",
-            "description": "Start line number of the commented code."
-          },
-          "Text": {
-            "type": "string",
-            "description": "Commentary content text."
-          }
-        },
-        "required": ["Line", "Text"],
-        "additionalProperties": false
-      }
-    }
-  },
-  "required": ["Summary", "Comments"],
-  "additionalProperties": false
-}`),
+				Schema: json.RawMessage(messageSchema),
 			},
 		},
 	}
