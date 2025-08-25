@@ -129,7 +129,7 @@ func (c *ChangesDescriberOpenAI) describeFileChanges(ctx context.Context, file, 
 	}
 
 	task1, err := pdc1.Execute(map[string]any{
-		"JSONSchema": messageSchema,
+		"JSONSchema": string(messageSchema),
 	})
 	if err != nil {
 		return summ, errors.Join(fmt.Errorf("execute `describe_changes_1` prompt template: %w", err), retry.ErrFatal)
