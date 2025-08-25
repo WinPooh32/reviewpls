@@ -355,31 +355,6 @@ func Object() *ObjectDefinition {
 
 	def.propertyDef = newPropertyDef[*ObjectDefinition, struct{}](&def)
 
-	// for _, addDef := range def {
-	// 	addDef(&od)
-	// }
-
-	// sort.Sort(&sortableProps{
-	// 	Names: od.propertiesNames,
-	// 	Props: od.properties,
-	// })
-
-	// for i, j := 0, -1; i < len(od.propertiesNames); i, j = i+1, j+1 {
-	// 	if j < 0 {
-	// 		continue
-	// 	}
-
-	// 	if l, r := od.propertiesNames[i], od.propertiesNames[j]; l == r {
-	// 		panic(fmt.Sprintf("has duplicate of the field name %q", l))
-	// 	}
-	// }
-
-	// for _, requiredName := range od.required {
-	// 	if sort.SearchStrings(od.propertiesNames, requiredName) > len(od.propertiesNames) {
-	// 		panic(fmt.Sprintf("required property %q is not presented at the object definition", requiredName))
-	// 	}
-	// }
-
 	return &def
 }
 
