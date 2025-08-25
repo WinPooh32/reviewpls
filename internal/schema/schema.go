@@ -268,7 +268,9 @@ func (bd *BooleanDefinition) MarshalJSON() ([]byte, error) {
 
 type ArrayDefinition struct {
 	propertyDef[*ArrayDefinition, struct{}, *struct{}]
-	items any
+	items    any
+	minItems opt.T[uint]
+	maxItems opt.T[uint]
 }
 
 func Array() *ArrayDefinition {
@@ -284,6 +286,16 @@ func (ad *ArrayDefinition) Items(typDef any) *ArrayDefinition {
 	return ad
 }
 
+func (ad *ArrayDefinition) MinItems(n uint) *ArrayDefinition {
+	ad.minItems = opt.Wrap(n)
+	return ad
+}
+
+func (ad *ArrayDefinition) MaxItems(n uint) *ArrayDefinition {
+	ad.maxItems = opt.Wrap(n)
+	return ad
+}
+
 func (ad *ArrayDefinition) MarshalJSON() ([]byte, error) {
 	if ad == nil {
 		return []byte("null"), nil
@@ -291,7 +303,9 @@ func (ad *ArrayDefinition) MarshalJSON() ([]byte, error) {
 
 	var value struct {
 		commonJSONSchema
-		Items any `json:"items,omitempty"`
+		Items    any   `json:"items,omitempty"`
+		MinItems *uint `json:"minItems,omitempty"`
+		MaxItems *uint `json:"maxItems,omitempty"`
 	}
 
 	value.Type = "array"
@@ -313,6 +327,14 @@ func (ad *ArrayDefinition) MarshalJSON() ([]byte, error) {
 	}
 
 	value.Items = ad.items
+
+	if ad.minItems.Set() {
+		value.MinItems = ptr(ad.minItems.Value())
+	}
+
+	if ad.maxItems.Set() {
+		value.MaxItems = ptr(ad.maxItems.Value())
+	}
 
 	bs, err := json.Marshal(value)
 	if err != nil {

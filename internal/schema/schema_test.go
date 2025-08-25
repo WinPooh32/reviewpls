@@ -33,7 +33,9 @@ func Example() {
 		Property("field_number_array",
 			Array().
 				Description("list of numbers").
-				Items(Integer()),
+				Items(Integer()).
+				MinItems(10).
+				MaxItems(20),
 		)
 
 	bs, err := json.MarshalIndent(&object, "", "\t")
@@ -54,6 +56,7 @@ func Example() {
 	// 	],
 	// 	"properties": {
 	// 		"field_int": {
+	// 			"type": "integer",
 	// 			"enum": [
 	// 				1,
 	// 				2,
@@ -61,13 +64,24 @@ func Example() {
 	// 			]
 	// 		},
 	// 		"field_number": {
+	// 			"type": "number",
 	// 			"enum": [
 	// 				0.1,
 	// 				2,
 	// 				3
 	// 			]
 	// 		},
+	// 		"field_number_array": {
+	// 			"type": "array",
+	// 			"description": "list of numbers",
+	// 			"items": {
+	// 				"type": "integer"
+	// 			},
+	// 			"minItems": 10,
+	// 			"maxItems": 20
+	// 		},
 	// 		"field_str": {
+	// 			"type": "string",
 	// 			"description": "My super-duper string field description",
 	// 			"nullable": true,
 	// 			"enum": [
