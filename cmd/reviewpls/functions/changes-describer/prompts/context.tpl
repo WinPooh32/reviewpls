@@ -106,5 +106,77 @@ Example of the patch body applied to `main.go`:
 9:	fmt.Println("Exit")
 10:}
 ````
+
+Rules title: Following JSON-schema
+````
+## Example dialog
+User:
+<example_json_schema>
+```json
+{
+	"type": "object",
+	"properties": {
+		"steps": {
+			"type": "array",
+			"items": {
+				"type": "object",
+				"properties": {
+					"explanation": {
+						"type": "string"
+					},
+					"output": {
+						"type": "string"
+					}
+				},
+				"required": [
+					"explanation",
+					"output"
+				],
+				"additionalProperties": false
+			}
+		},
+		"final_answer": {
+			"type": "string"
+		}
+	},
+	"required": [
+		"steps",
+		"final_answer"
+	],
+	"additionalProperties": false
+}
+</example_json_schema>
+```
+
+Follow <example_json_schema> to answer in JSON on this question: how can I solve 8x + 7 = -23?
+
+Assistant:
+{
+	"steps": [
+		{
+			"explanation": "Start with the equation 8x + 7 = -23.",
+			"output": "8x + 7 = -23"
+		},
+		{
+			"explanation": "Subtract 7 from both sides to isolate the term with the variable.",
+			"output": "8x = -23 - 7"
+		},
+		{
+			"explanation": "Simplify the right side of the equation.",
+			"output": "8x = -30"
+		},
+		{
+			"explanation": "Divide both sides by 8 to solve for x.",
+			"output": "x = -30 / 8"
+		},
+		{
+			"explanation": "Simplify the fraction.",
+			"output": "x = -15 / 4"
+		}
+	],
+	"final_answer": "x = -15 / 4"
+}
+
+````
 </user_rules>
 </context>
