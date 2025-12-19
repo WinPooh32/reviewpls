@@ -26,13 +26,13 @@ func (p *Prompt) Execute(data map[string]any) (string, error) {
 	return sb.String(), nil
 }
 
-func Load(dir fs.FS, patterns ...string) (map[string]Prompt, error) {
+func Load(dir fs.FS, patterns ...string) (PromptSet, error) {
 	tpl, err := template.ParseFS(dir, patterns...)
 	if err != nil {
 		return nil, fmt.Errorf("parse fs templates: %w", err)
 	}
 
-	prompts := map[string]Prompt{}
+	prompts := PromptSet{}
 
 	for _, t := range tpl.Templates() {
 		ext := filepath.Ext(t.Name())

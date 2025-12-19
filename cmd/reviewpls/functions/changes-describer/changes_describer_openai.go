@@ -34,16 +34,12 @@ func NewChangesDescriberOpenAI(cfg ChangesDescriberOpenAIConfig, cli openai.Clie
 		return nil, fmt.Errorf("load prompts: %w", err)
 	}
 
-	if _, ok := prompts["context"]; !ok {
-		return nil, fmt.Errorf("'context' prompt is not loaded")
-	}
-
-	if _, ok := prompts["describe_changes_0"]; !ok {
-		return nil, fmt.Errorf("'describe_changes_0' prompt is not loaded")
-	}
-
-	if _, ok := prompts["describe_changes_1"]; !ok {
-		return nil, fmt.Errorf("'describe_changes_1' prompt is not loaded")
+	if err := prompts.Require(
+		"context",
+		"describe_changes_0",
+		"describe_changes_1",
+	); err != nil {
+		return nil, fmt.Errorf("require prompts: %w", err)
 	}
 
 	return &ChangesDescriberOpenAI{
