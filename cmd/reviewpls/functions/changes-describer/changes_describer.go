@@ -15,19 +15,19 @@ import (
 	"github.com/openai/openai-go/v2/shared"
 )
 
-type ChangesDescriberOpenAIConfig struct {
+type ChangesDescriberConfig struct {
 	Model            string
 	RetryMaxAttempts int
 	RetryDelay       time.Duration
 }
 
-type ChangesDescriberOpenAI struct {
-	cfg     ChangesDescriberOpenAIConfig
+type ChangesDescriber struct {
+	cfg     ChangesDescriberConfig
 	cli     openai.Client
 	prompts prompt.PromptSet
 }
 
-func NewChangesDescriberOpenAI(cfg ChangesDescriberOpenAIConfig, cli openai.Client) (*ChangesDescriberOpenAI, error) {
+func New(cfg ChangesDescriberConfig, cli openai.Client) (*ChangesDescriber, error) {
 	prompts, err := prompt.Load(prompts.Files, "*.tpl")
 	if err != nil {
 		return nil, fmt.Errorf("load prompts: %w", err)
@@ -41,14 +41,14 @@ func NewChangesDescriberOpenAI(cfg ChangesDescriberOpenAIConfig, cli openai.Clie
 		return nil, fmt.Errorf("require prompts: %w", err)
 	}
 
-	return &ChangesDescriberOpenAI{
+	return &ChangesDescriber{
 		cfg:     cfg,
 		cli:     cli,
 		prompts: prompts,
 	}, nil
 }
 
-func (c *ChangesDescriberOpenAI) DescribeFileChanges(ctx context.Context, file, filePatch string) (summ *functions.ChangesSummary, err error) {
+func (c *ChangesDescriber) DescribeFileChanges(ctx context.Context, file, filePatch string) (summ *functions.ChangesSummary, err error) {
 	err = retry.Run(ctx,
 		func() error {
 			summ, err = c.describeFileChanges(ctx, file, filePatch)
@@ -61,7 +61,7 @@ func (c *ChangesDescriberOpenAI) DescribeFileChanges(ctx context.Context, file, 
 	return summ, err
 }
 
-func (c *ChangesDescriberOpenAI) describeFileChanges(ctx context.Context, file, filePatch string) (*functions.ChangesSummary, error) {
+func (c *ChangesDescriber) describeFileChanges(ctx context.Context, file, filePatch string) (*functions.ChangesSummary, error) {
 	contextMessage, err := c.prompts.Format("context", nil)
 	if err != nil {
 		return nil, errors.Join(err, retry.ErrFatal)

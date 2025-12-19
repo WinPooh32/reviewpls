@@ -58,8 +58,8 @@ func main() {
 		HeadBranch: *gitHeadBaranch,
 	}
 
-	cd, err := changesdescriber.NewChangesDescriberOpenAI(
-		changesdescriber.ChangesDescriberOpenAIConfig{
+	cd, err := changesdescriber.New(
+		changesdescriber.ChangesDescriberConfig{
 			Model:            *model,
 			RetryMaxAttempts: maxRetries,
 			RetryDelay:       0,
@@ -69,7 +69,7 @@ func main() {
 
 	pf := PipelineFunctions{
 		ChangesDescriber: cd,
-		Reviewer:         reviewer.NewReviewerOpenAI(openaiClient, *model),
+		Reviewer:         reviewer.New(openaiClient, *model),
 	}
 
 	if err := run(ctx, mr, pf); err != nil {
