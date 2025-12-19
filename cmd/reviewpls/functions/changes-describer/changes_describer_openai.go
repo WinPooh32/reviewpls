@@ -48,7 +48,7 @@ func NewChangesDescriberOpenAI(cfg ChangesDescriberOpenAIConfig, cli openai.Clie
 	}, nil
 }
 
-func (c *ChangesDescriberOpenAI) DescribeFileChanges(ctx context.Context, file, filePatch string) (summ functions.ChangesSummary, err error) {
+func (c *ChangesDescriberOpenAI) DescribeFileChanges(ctx context.Context, file, filePatch string) (summ *functions.ChangesSummary, err error) {
 	err = retry.Run(ctx,
 		func() error {
 			summ, err = c.describeFileChanges(ctx, file, filePatch)
@@ -61,20 +61,20 @@ func (c *ChangesDescriberOpenAI) DescribeFileChanges(ctx context.Context, file, 
 	return summ, err
 }
 
-func (c *ChangesDescriberOpenAI) describeFileChanges(ctx context.Context, file, filePatch string) (summ functions.ChangesSummary, err error) {
+func (c *ChangesDescriberOpenAI) describeFileChanges(ctx context.Context, file, filePatch string) (*functions.ChangesSummary, error) {
 	contextMessage, err := c.prompts.Format("context", nil)
 	if err != nil {
-		return summ, errors.Join(err, retry.ErrFatal)
+		return nil, errors.Join(err, retry.ErrFatal)
 	}
 
 	task0, err := c.prompts.Format("describe_changes_0", map[string]any{"Patch": filePatch})
 	if err != nil {
-		return summ, errors.Join(err, retry.ErrFatal)
+		return nil, errors.Join(err, retry.ErrFatal)
 	}
 
 	task1, err := c.prompts.Format("describe_changes_1", map[string]any{"JSONSchema": responseChangesSchema})
 	if err != nil {
-		return summ, errors.Join(err, retry.ErrFatal)
+		return nil, errors.Join(err, retry.ErrFatal)
 	}
 
 	params := openai.ChatCompletionNewParams{
@@ -87,13 +87,13 @@ func (c *ChangesDescriberOpenAI) describeFileChanges(ctx context.Context, file, 
 
 	chatCompletion0, err := c.cli.Chat.Completions.New(ctx, params)
 	if err != nil {
-		return summ, fmt.Errorf("new completion: %w", err)
+		return nil, fmt.Errorf("new completion: %w", err)
 	}
 
 	completion := chatCompletion0.Choices[0]
 
 	if err := checkCompletion(completion); err != nil {
-		return summ, err
+		return nil, err
 	}
 
 	params.Messages = append(params.Messages,
@@ -116,22 +116,24 @@ func (c *ChangesDescriberOpenAI) describeFileChanges(ctx context.Context, file, 
 
 	chatCompletion1, err := c.cli.Chat.Completions.New(ctx, params)
 	if err != nil {
-		return summ, fmt.Errorf("new completion: %w", err)
+		return nil, fmt.Errorf("new completion: %w", err)
 	}
 
 	completion = chatCompletion1.Choices[0]
 
 	if err := checkCompletion(completion); err != nil {
-		return summ, err
+		return nil, err
 	}
 
+	var summ functions.ChangesSummary
+
 	if err := json.Unmarshal([]byte(completion.Message.Content), &summ); err != nil {
-		return summ, fmt.Errorf("parse model json response: %w", err)
+		return nil, fmt.Errorf("parse model json response: %w", err)
 	}
 
 	summ.File = file
 
-	return summ, nil
+	return &summ, nil
 }
 
 func checkCompletion(completion openai.ChatCompletionChoice) error {

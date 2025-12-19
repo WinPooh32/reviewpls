@@ -111,7 +111,7 @@ func run(ctx context.Context, mr MergeRequest, pf PipelineFunctions) error {
 		return fmt.Errorf("get repo diff commits; %w", err)
 	}
 
-	summaries := make([]functions.ChangesSummary, 0, len(files))
+	summaries := make([]*functions.ChangesSummary, 0, len(files))
 
 	for _, file := range files {
 		if strings.Contains(file, "pb.go") || strings.Contains(file, "gen.go") {

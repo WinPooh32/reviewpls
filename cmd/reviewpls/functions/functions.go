@@ -16,7 +16,7 @@ type ChangesSummary struct {
 }
 
 type ChangesDescriber interface {
-	DescribeFileChanges(ctx context.Context, file, filePatch string) (ChangesSummary, error)
+	DescribeFileChanges(ctx context.Context, file, filePatch string) (*ChangesSummary, error)
 }
 
 type ReviewComment struct {
@@ -26,5 +26,5 @@ type ReviewComment struct {
 }
 
 type Reviewer interface {
-	AnalyzeChangesSummary(ctx context.Context, summaries []ChangesSummary) ([]ReviewComment, error)
+	AnalyzeChangesSummary(ctx context.Context, summaries []*ChangesSummary) ([]*ReviewComment, error)
 }

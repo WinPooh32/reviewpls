@@ -19,6 +19,6 @@ func NewReviewerOpenAI(cli openai.Client, model string) *ReviewerOpenAI {
 	}
 }
 
-func (r *ReviewerOpenAI) AnalyzeChangesSummary(ctx context.Context, summaries []functions.ChangesSummary) ([]functions.ReviewComment, error) {
+func (r *ReviewerOpenAI) AnalyzeChangesSummary(ctx context.Context, summaries []*functions.ChangesSummary) ([]*functions.ReviewComment, error) {
 	panic("TODO: Implement")
 }
