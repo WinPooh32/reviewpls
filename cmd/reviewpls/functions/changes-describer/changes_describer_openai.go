@@ -11,7 +11,6 @@ import (
 	"github.com/WinPooh32/reviewpls/cmd/reviewpls/functions/changes-describer/prompts"
 	"github.com/WinPooh32/reviewpls/internal/prompt"
 	"github.com/WinPooh32/reviewpls/internal/retry"
-	sc "github.com/WinPooh32/reviewpls/internal/schema"
 	"github.com/openai/openai-go/v2"
 	"github.com/openai/openai-go/v2/shared"
 )
@@ -63,38 +62,6 @@ func (c *ChangesDescriberOpenAI) DescribeFileChanges(ctx context.Context, file, 
 }
 
 func (c *ChangesDescriberOpenAI) describeFileChanges(ctx context.Context, file, filePatch string) (summ functions.ChangesSummary, err error) {
-	messageSchema := sc.Object().
-		AdditionalProperties(false).
-		Required(
-			"Summary",
-			"Hypotheses",
-		).
-		Property("Summary",
-			sc.String().
-				Description("Brief description of the changes."),
-		).
-		Property("Hypotheses",
-			sc.Array().
-				MinItems(0).
-				Items(
-					sc.Object().
-						AdditionalProperties(false).
-						Required(
-							"Line",
-							"Hypothesis",
-						).
-						Property("Line",
-							sc.Integer().
-								Description("Start line number of the commented code."),
-						).
-						Property("Hypothesis",
-							sc.String().
-								Description("Hypothesis content text."),
-						),
-				),
-		).
-		JSON()
-
 	contextMessage, err := c.prompts.Execute("context", nil)
 	if err != nil {
 		return summ, errors.Join(err, retry.ErrFatal)
@@ -105,7 +72,7 @@ func (c *ChangesDescriberOpenAI) describeFileChanges(ctx context.Context, file, 
 		return summ, errors.Join(err, retry.ErrFatal)
 	}
 
-	task1, err := c.prompts.Execute("describe_changes_1", map[string]any{"JSONSchema": string(messageSchema)})
+	task1, err := c.prompts.Execute("describe_changes_1", map[string]any{"JSONSchema": responseChangesSchema})
 	if err != nil {
 		return summ, errors.Join(err, retry.ErrFatal)
 	}
@@ -142,7 +109,7 @@ func (c *ChangesDescriberOpenAI) describeFileChanges(ctx context.Context, file, 
 			JSONSchema: shared.ResponseFormatJSONSchemaJSONSchemaParam{
 				Name:   "ChangesReview",
 				Strict: openai.Bool(true),
-				Schema: json.RawMessage(messageSchema),
+				Schema: json.RawMessage(responseChangesSchema),
 			},
 		},
 	}
