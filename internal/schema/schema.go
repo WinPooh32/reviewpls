@@ -380,6 +380,15 @@ func Object() *ObjectDefinition {
 	return &def
 }
 
+func (od *ObjectDefinition) JSON() string {
+	bs, err := json.Marshal(od)
+	if err != nil {
+		panic(err)
+	}
+
+	return string(bs)
+}
+
 func (od *ObjectDefinition) MarshalJSON() ([]byte, error) {
 	if od == nil {
 		return []byte("null"), nil
