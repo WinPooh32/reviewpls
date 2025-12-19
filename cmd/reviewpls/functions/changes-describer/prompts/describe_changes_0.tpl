@@ -4,6 +4,7 @@
 ```
 </input>
 
+Notice: all code from the <input> compiles without errors, passes all tests and linters.
+
 1. Briefly describe the changes in the <input>.
-2. Describe potentially risky changes in the <input>.
-3. As a code reviewer, leave comments on problematic changes in specific line numbers in the <input>.
+2. As a code reviewer, put out the hypothesis of only problematic changes in specific line numbers in the <input>.

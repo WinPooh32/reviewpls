@@ -71,13 +71,13 @@ func (c *ChangesDescriberOpenAI) describeFileChanges(ctx context.Context, file, 
 		AdditionalProperties(false).
 		Required(
 			"Summary",
-			"Comments",
+			"Hypotheses",
 		).
 		Property("Summary",
 			sc.String().
 				Description("Brief description of the changes."),
 		).
-		Property("Comments",
+		Property("Hypotheses",
 			sc.Array().
 				MinItems(0).
 				Items(
@@ -85,15 +85,15 @@ func (c *ChangesDescriberOpenAI) describeFileChanges(ctx context.Context, file, 
 						AdditionalProperties(false).
 						Required(
 							"Line",
-							"Text",
+							"Hypothesis",
 						).
 						Property("Line",
 							sc.Integer().
 								Description("Start line number of the commented code."),
 						).
-						Property("Text",
+						Property("Hypothesis",
 							sc.String().
-								Description("Commentary content text."),
+								Description("Hypothesis content text."),
 						),
 				),
 		)

@@ -5,14 +5,14 @@ import (
 )
 
 type ChangeCommentary struct {
-	Line int
-	Text string
+	Line       int
+	Hypothesis string
 }
 
 type ChangesSummary struct {
-	File     string
-	Summary  string
-	Comments []ChangeCommentary
+	File       string
+	Summary    string
+	Hypotheses []ChangeCommentary
 }
 
 type ChangesDescriber interface {
