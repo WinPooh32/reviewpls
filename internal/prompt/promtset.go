@@ -31,3 +31,12 @@ func (ps PromptSet) checkLoaded(name string) error {
 
 	return nil
 }
+
+func (ps PromptSet) Execute(name string, data map[string]any) (string, error) {
+	p, ok := ps[name]
+	if !ok {
+		return "", fmt.Errorf("%q is not loaded", name)
+	}
+
+	return p.Execute(data)
+}
