@@ -25,7 +25,7 @@ type ChangesDescriberOpenAIConfig struct {
 type ChangesDescriberOpenAI struct {
 	cfg     ChangesDescriberOpenAIConfig
 	cli     openai.Client
-	prompts map[string]prompt.Prompt
+	prompts prompt.PromptSet
 }
 
 func NewChangesDescriberOpenAI(cfg ChangesDescriberOpenAIConfig, cli openai.Client) (*ChangesDescriberOpenAI, error) {
@@ -63,7 +63,7 @@ func (c *ChangesDescriberOpenAI) DescribeFileChanges(ctx context.Context, file, 
 }
 
 func (c *ChangesDescriberOpenAI) describeFileChanges(ctx context.Context, file, filePatch string) (summ functions.ChangesSummary, err error) {
-	JSONSchemaRoot := sc.Object().
+	messageSchema := sc.Object().
 		AdditionalProperties(false).
 		Required(
 			"Summary",
@@ -92,43 +92,22 @@ func (c *ChangesDescriberOpenAI) describeFileChanges(ctx context.Context, file, 
 								Description("Hypothesis content text."),
 						),
 				),
-		)
+		).
+		JSON()
 
-	messageSchema, err := json.Marshal(&JSONSchemaRoot)
+	contextMessage, err := c.prompts.Execute("context", nil)
 	if err != nil {
-		return summ, fmt.Errorf("encode schema json: %w", err)
+		return summ, errors.Join(err, retry.ErrFatal)
 	}
 
-	pc, ok := c.prompts["context"]
-	if !ok {
-		return summ, errors.Join(errors.New("can't find 'context' prompt"), retry.ErrFatal)
-	}
-
-	pdc0, ok := c.prompts["describe_changes_0"]
-	if !ok {
-		return summ, errors.Join(errors.New("can't find 'describe_changes_0' prompt"), retry.ErrFatal)
-	}
-
-	pdc1, ok := c.prompts["describe_changes_1"]
-	if !ok {
-		return summ, errors.Join(errors.New("can't find 'describe_changes_1' prompt"), retry.ErrFatal)
-	}
-
-	contextMessage, err := pc.Execute(nil)
+	task0, err := c.prompts.Execute("describe_changes_0", map[string]any{"Patch": filePatch})
 	if err != nil {
-		return summ, errors.Join(fmt.Errorf("execute 'context' prompt template: %w", err), retry.ErrFatal)
+		return summ, errors.Join(err, retry.ErrFatal)
 	}
 
-	task0, err := pdc0.Execute(map[string]any{"Patch": filePatch})
+	task1, err := c.prompts.Execute("describe_changes_1", map[string]any{"JSONSchema": string(messageSchema)})
 	if err != nil {
-		return summ, errors.Join(fmt.Errorf("execute `describe_changes_0` prompt template: %w", err), retry.ErrFatal)
-	}
-
-	task1, err := pdc1.Execute(map[string]any{
-		"JSONSchema": string(messageSchema),
-	})
-	if err != nil {
-		return summ, errors.Join(fmt.Errorf("execute `describe_changes_1` prompt template: %w", err), retry.ErrFatal)
+		return summ, errors.Join(err, retry.ErrFatal)
 	}
 
 	params := openai.ChatCompletionNewParams{
