@@ -33,7 +33,7 @@ func TestExecute_Greeting(t *testing.T) {
 	prompt, ok := prompts["greeting"]
 	assert.True(t, ok, "should find 'greeting' template")
 
-	result, err := prompt.Execute(map[string]any{"Name": "Alice"})
+	result, err := prompt.Format(map[string]any{"Name": "Alice"})
 	require.NoError(t, err, "should execute template without error")
 
 	expected := "Hello, Alice! Welcome to our service."
@@ -49,7 +49,7 @@ func TestExecute_Farewell(t *testing.T) {
 	prompt, ok := prompts["farewell"]
 	assert.True(t, ok, "should find 'farewell' template")
 
-	result, err := prompt.Execute(map[string]any{"Name": "Bob"})
+	result, err := prompt.Format(map[string]any{"Name": "Bob"})
 	require.NoError(t, err, "should execute template without error")
 
 	expected := "Goodbye, Bob! We hope to see you again soon."
@@ -65,7 +65,7 @@ func TestExecute_MissingTemplateField(t *testing.T) {
 	prompt, ok := prompts["greeting"]
 	assert.True(t, ok, "should find 'greeting' template")
 
-	_, err = prompt.Execute(map[string]any{})
+	_, err = prompt.Format(map[string]any{})
 	if assert.Error(t, err) {
 		expectedErr := "has no entry for key"
 		assert.ErrorContainsf(t, err, expectedErr, "should produce correct error message")

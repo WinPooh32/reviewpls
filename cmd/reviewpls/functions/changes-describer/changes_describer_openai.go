@@ -62,17 +62,17 @@ func (c *ChangesDescriberOpenAI) DescribeFileChanges(ctx context.Context, file, 
 }
 
 func (c *ChangesDescriberOpenAI) describeFileChanges(ctx context.Context, file, filePatch string) (summ functions.ChangesSummary, err error) {
-	contextMessage, err := c.prompts.Execute("context", nil)
+	contextMessage, err := c.prompts.Format("context", nil)
 	if err != nil {
 		return summ, errors.Join(err, retry.ErrFatal)
 	}
 
-	task0, err := c.prompts.Execute("describe_changes_0", map[string]any{"Patch": filePatch})
+	task0, err := c.prompts.Format("describe_changes_0", map[string]any{"Patch": filePatch})
 	if err != nil {
 		return summ, errors.Join(err, retry.ErrFatal)
 	}
 
-	task1, err := c.prompts.Execute("describe_changes_1", map[string]any{"JSONSchema": responseChangesSchema})
+	task1, err := c.prompts.Format("describe_changes_1", map[string]any{"JSONSchema": responseChangesSchema})
 	if err != nil {
 		return summ, errors.Join(err, retry.ErrFatal)
 	}

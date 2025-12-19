@@ -16,7 +16,7 @@ func (p *Prompt) Name() string {
 	return p.tpl.Name()
 }
 
-func (p *Prompt) Execute(data map[string]any) (string, error) {
+func (p *Prompt) Format(data map[string]any) (string, error) {
 	sb := strings.Builder{}
 
 	if err := p.tpl.Option("missingkey=error").Execute(&sb, data); err != nil {
