@@ -5,14 +5,13 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"log/slog"
 	"time"
 
 	"github.com/WinPooh32/reviewpls/cmd/reviewpls/functions"
 	"github.com/WinPooh32/reviewpls/cmd/reviewpls/functions/changes-describer/prompts"
+	"github.com/WinPooh32/reviewpls/internal/chat"
 	"github.com/WinPooh32/reviewpls/internal/prompt"
 	"github.com/WinPooh32/reviewpls/internal/retry"
-	"github.com/WinPooh32/reviewpls/internal/slogutil"
 	"github.com/openai/openai-go/v2"
 	"github.com/openai/openai-go/v2/shared"
 )
@@ -87,22 +86,14 @@ func (c *ChangesDescriber) describeFileChanges(ctx context.Context, file, filePa
 		Model: c.cfg.Model,
 	}
 
-	chatCompletion0, err := c.cli.Chat.Completions.New(ctx, params)
+	choice, err := chat.NewCompletion(ctx, c.cli.Chat.Completions, params)
 	if err != nil {
-		return nil, fmt.Errorf("new completion: %w", err)
+		return nil, fmt.Errorf("new chat completion: %w", err)
 	}
-
-	completion := chatCompletion0.Choices[0]
-
-	if err := checkCompletion(completion); err != nil {
-		return nil, err
-	}
-
-	logCompletion(ctx, chatCompletion0)
 
 	params.Messages = append(params.Messages,
 		[]openai.ChatCompletionMessageParamUnion{
-			completion.Message.ToParam(),
+			choice.Message.ToParam(),
 			openai.UserMessage(task1),
 		}...,
 	)
@@ -118,48 +109,18 @@ func (c *ChangesDescriber) describeFileChanges(ctx context.Context, file, filePa
 		},
 	}
 
-	chatCompletion1, err := c.cli.Chat.Completions.New(ctx, params)
+	choice, err = chat.NewCompletion(ctx, c.cli.Chat.Completions, params)
 	if err != nil {
-		return nil, fmt.Errorf("new completion: %w", err)
+		return nil, fmt.Errorf("new chat completion: %w", err)
 	}
-
-	completion = chatCompletion1.Choices[0]
-
-	if err := checkCompletion(completion); err != nil {
-		return nil, err
-	}
-
-	logCompletion(ctx, chatCompletion1)
 
 	var summ functions.ChangesSummary
 
-	if err := json.Unmarshal([]byte(completion.Message.Content), &summ); err != nil {
+	if err := json.Unmarshal([]byte(choice.Message.Content), &summ); err != nil {
 		return nil, fmt.Errorf("parse model json response: %w", err)
 	}
 
 	summ.File = file
 
 	return &summ, nil
-}
-
-func logCompletion(ctx context.Context, completion *openai.ChatCompletion) {
-	usage := completion.Usage
-	choice := completion.Choices[0]
-
-	slogutil.Ctx(ctx).Debug("new completion",
-		slog.Group("usage",
-			slog.Int64("total_tokens", usage.TotalTokens),
-			slog.Int64("prompt_tokens", usage.PromptTokens),
-			slog.Int64("completion_tokens", usage.CompletionTokens),
-		),
-		slog.String("choice", choice.Message.Content),
-	)
-}
-
-func checkCompletion(completion openai.ChatCompletionChoice) error {
-	if completion.FinishReason != "stop" {
-		return fmt.Errorf("unexpected finish reason: %s", completion.FinishReason)
-	}
-
-	return nil
 }
