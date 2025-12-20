@@ -5,12 +5,14 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"log/slog"
 	"time"
 
 	"github.com/WinPooh32/reviewpls/cmd/reviewpls/functions"
 	"github.com/WinPooh32/reviewpls/cmd/reviewpls/functions/changes-describer/prompts"
 	"github.com/WinPooh32/reviewpls/internal/prompt"
 	"github.com/WinPooh32/reviewpls/internal/retry"
+	"github.com/WinPooh32/reviewpls/internal/slogutil"
 	"github.com/openai/openai-go/v2"
 	"github.com/openai/openai-go/v2/shared"
 )
@@ -124,6 +126,8 @@ func (c *ChangesDescriber) describeFileChanges(ctx context.Context, file, filePa
 	if err := checkCompletion(completion); err != nil {
 		return nil, err
 	}
+
+	slogutil.Ctx(ctx).Debug("completion", slog.String("choice", completion.Message.Content))
 
 	var summ functions.ChangesSummary
 

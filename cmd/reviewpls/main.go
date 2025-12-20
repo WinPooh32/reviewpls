@@ -6,6 +6,7 @@ import (
 	"errors"
 	"flag"
 	"fmt"
+	"log/slog"
 	"os"
 	"os/signal"
 	"strings"
@@ -14,6 +15,7 @@ import (
 	changesdescriber "github.com/WinPooh32/reviewpls/cmd/reviewpls/functions/changes-describer"
 	"github.com/WinPooh32/reviewpls/cmd/reviewpls/functions/reviewer"
 	"github.com/WinPooh32/reviewpls/internal/gitrepo"
+	"github.com/WinPooh32/reviewpls/internal/slogutil"
 	"github.com/openai/openai-go/v2"
 )
 
@@ -34,6 +36,14 @@ func main() {
 
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt)
 	defer stop()
+
+	logger := slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{
+		Level:       slog.LevelDebug,
+		AddSource:   false,
+		ReplaceAttr: nil,
+	}))
+
+	ctx = slogutil.WithContext(ctx, logger)
 
 	gitBaseBranch := flag.String("git-branch-base", "master", "base git repositroy branch name")
 	gitHeadBaranch := flag.String("git-branch-head", "feature-1234", "head branch name")
@@ -127,7 +137,11 @@ func run(ctx context.Context, mr MergeRequest, pf PipelineFunctions) error {
 			continue
 		}
 
-		summ, err := pf.ChangesDescriber.DescribeFileChanges(ctx, file, patch.String())
+		patchStr := patch.String()
+
+		slogutil.Ctx(ctx).Debug("blame patch", slog.String("file", file), slog.String("patch", patchStr))
+
+		summ, err := pf.ChangesDescriber.DescribeFileChanges(ctx, file, patchStr)
 		if err != nil {
 			return fmt.Errorf("describe file changes of %q: %w", file, err)
 		}
