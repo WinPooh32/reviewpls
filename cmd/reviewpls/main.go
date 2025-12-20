@@ -54,7 +54,7 @@ func main() {
 
 	repo, err := gitrepo.OpenRepository(ctx, *gitRootDir)
 	if err != nil {
-		fmt.Fprintln(os.Stderr, err.Error())
+		logger.Error("run", slog.String("error", err.Error()))
 
 		exitCode = errorCodeUnknown
 
@@ -84,7 +84,7 @@ func main() {
 	}
 
 	if err := run(ctx, mr, pf); err != nil {
-		fmt.Fprintln(os.Stderr, err.Error())
+		logger.Error("run", slog.String("error", err.Error()))
 
 		if errors.Is(err, errHasReviewComments) {
 			exitCode = errorCodeHasComments
