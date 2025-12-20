@@ -29,7 +29,8 @@ func main() {
 
 	repo, err := gitrepo.OpenRepository(ctx, *rootDir)
 	checkErr(err)
-	defer repo.Close()
+
+	defer checkErr(repo.Close())
 
 	diffCommits, err := repo.DiffCommits(ctx, *masterBranch, *featBranch)
 	checkErr(err)

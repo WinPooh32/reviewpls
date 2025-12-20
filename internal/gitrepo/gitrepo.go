@@ -5,10 +5,12 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"log/slog"
 	"strconv"
 	"strings"
 
 	"github.com/WinPooh32/git"
+	"github.com/WinPooh32/reviewpls/internal/slogutil"
 )
 
 type DiffOperation int
@@ -173,7 +175,12 @@ func (r *Repository) BlamePatch(ctx context.Context, headBranch string, diffComm
 	if err != nil {
 		return nil, fmt.Errorf("git: create blame reader for %q at the commit %q: %w", fileRelPath, headCommit.ID, err)
 	}
-	defer brd.Close()
+
+	defer func() {
+		if err := brd.Close(); err != nil {
+			slogutil.Ctx(ctx).Warn("close blame reader", slog.String("error", err.Error()))
+		}
+	}()
 
 	metCommits := map[string]struct{}{}
 
@@ -191,6 +198,7 @@ reading:
 		if errors.Is(err, io.EOF) {
 			break reading
 		}
+
 		if err != nil {
 			return nil, fmt.Errorf("blame reader: next part: %w", err)
 		}
@@ -205,6 +213,8 @@ reading:
 		}
 
 		part := BalamePart{
+			Operation: 0,
+			Commit:    nil,
 			StartLine: bp.LinesCount + 1,
 			Lines:     blamePart.Lines,
 		}
