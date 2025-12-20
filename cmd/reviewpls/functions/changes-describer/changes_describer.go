@@ -98,6 +98,8 @@ func (c *ChangesDescriber) describeFileChanges(ctx context.Context, file, filePa
 		return nil, err
 	}
 
+	logCompletion(ctx, chatCompletion0)
+
 	params.Messages = append(params.Messages,
 		[]openai.ChatCompletionMessageParamUnion{
 			completion.Message.ToParam(),
@@ -127,7 +129,7 @@ func (c *ChangesDescriber) describeFileChanges(ctx context.Context, file, filePa
 		return nil, err
 	}
 
-	slogutil.Ctx(ctx).Debug("completion", slog.String("choice", completion.Message.Content))
+	logCompletion(ctx, chatCompletion1)
 
 	var summ functions.ChangesSummary
 
@@ -138,6 +140,20 @@ func (c *ChangesDescriber) describeFileChanges(ctx context.Context, file, filePa
 	summ.File = file
 
 	return &summ, nil
+}
+
+func logCompletion(ctx context.Context, completion *openai.ChatCompletion) {
+	usage := completion.Usage
+	choice := completion.Choices[0]
+
+	slogutil.Ctx(ctx).Debug("new completion",
+		slog.Group("usage",
+			slog.Int64("total_tokens", usage.TotalTokens),
+			slog.Int64("prompt_tokens", usage.PromptTokens),
+			slog.Int64("completion_tokens", usage.CompletionTokens),
+		),
+		slog.String("choice", choice.Message.Content),
+	)
 }
 
 func checkCompletion(completion openai.ChatCompletionChoice) error {
