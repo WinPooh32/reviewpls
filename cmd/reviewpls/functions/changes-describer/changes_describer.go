@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"slices"
 	"time"
 
 	"github.com/WinPooh32/reviewpls/cmd/reviewpls/functions"
@@ -68,50 +69,20 @@ func (c *ChangesDescriber) describeFileChanges(ctx context.Context, file, filePa
 		return nil, errors.Join(err, retry.ErrFatal)
 	}
 
-	task0, err := c.prompts.Format("describe_changes_0", map[string]any{"Patch": filePatch})
+	contextMessages := []openai.ChatCompletionMessageParamUnion{
+		openai.SystemMessage(contextMessage),
+	}
+
+	choice, err := c.explainChanges(ctx, contextMessages, filePatch)
 	if err != nil {
 		return nil, errors.Join(err, retry.ErrFatal)
 	}
 
-	task1, err := c.prompts.Format("describe_changes_1", map[string]any{"JSONSchema": responseChangesSchema})
+	contextMessages = append(contextMessages, choice.Message.ToParam())
+
+	choice, err = c.criticChanges(ctx, contextMessages)
 	if err != nil {
 		return nil, errors.Join(err, retry.ErrFatal)
-	}
-
-	params := openai.ChatCompletionNewParams{
-		Messages: []openai.ChatCompletionMessageParamUnion{
-			openai.SystemMessage(contextMessage),
-			openai.UserMessage(task0),
-		},
-		Model: c.cfg.Model,
-	}
-
-	choice, err := chat.NewCompletion(ctx, c.cli.Chat.Completions, params)
-	if err != nil {
-		return nil, fmt.Errorf("new chat completion: %w", err)
-	}
-
-	params.Messages = append(params.Messages,
-		[]openai.ChatCompletionMessageParamUnion{
-			choice.Message.ToParam(),
-			openai.UserMessage(task1),
-		}...,
-	)
-
-	params.ResponseFormat = openai.ChatCompletionNewParamsResponseFormatUnion{
-		OfJSONSchema: &shared.ResponseFormatJSONSchemaParam{
-			Type: "json_object",
-			JSONSchema: shared.ResponseFormatJSONSchemaJSONSchemaParam{
-				Name:   "ChangesReview",
-				Strict: openai.Bool(true),
-				Schema: json.RawMessage(responseChangesSchema),
-			},
-		},
-	}
-
-	choice, err = chat.NewCompletion(ctx, c.cli.Chat.Completions, params)
-	if err != nil {
-		return nil, fmt.Errorf("new chat completion: %w", err)
 	}
 
 	var summ functions.ChangesSummary
@@ -123,4 +94,52 @@ func (c *ChangesDescriber) describeFileChanges(ctx context.Context, file, filePa
 	summ.File = file
 
 	return &summ, nil
+}
+
+func (c *ChangesDescriber) explainChanges(ctx context.Context, contextMessages []openai.ChatCompletionMessageParamUnion, filePatch string) (*openai.ChatCompletionChoice, error) {
+	task, err := c.prompts.Format("describe_changes_0", map[string]any{"Patch": filePatch})
+	if err != nil {
+		return nil, errors.Join(err, retry.ErrFatal)
+	}
+
+	params := openai.ChatCompletionNewParams{
+		Model:    c.cfg.Model,
+		Messages: append(slices.Clone(contextMessages), openai.UserMessage(task)),
+	}
+
+	choice, err := chat.NewCompletion(ctx, c.cli.Chat.Completions, params)
+	if err != nil {
+		return nil, fmt.Errorf("new chat completion: %w", err)
+	}
+
+	return choice, nil
+}
+
+func (c *ChangesDescriber) criticChanges(ctx context.Context, contextMessages []openai.ChatCompletionMessageParamUnion) (*openai.ChatCompletionChoice, error) {
+	task, err := c.prompts.Format("describe_changes_1", map[string]any{"JSONSchema": responseChangesSchema})
+	if err != nil {
+		return nil, errors.Join(err, retry.ErrFatal)
+	}
+
+	params := openai.ChatCompletionNewParams{
+		Model:    c.cfg.Model,
+		Messages: append(slices.Clone(contextMessages), openai.UserMessage(task)),
+		ResponseFormat: openai.ChatCompletionNewParamsResponseFormatUnion{
+			OfJSONSchema: &shared.ResponseFormatJSONSchemaParam{
+				Type: "json_object",
+				JSONSchema: shared.ResponseFormatJSONSchemaJSONSchemaParam{
+					Name:   "ChangesReview",
+					Strict: openai.Bool(true),
+					Schema: json.RawMessage(responseChangesSchema),
+				},
+			},
+		},
+	}
+
+	choice, err := chat.NewCompletion(ctx, c.cli.Chat.Completions, params)
+	if err != nil {
+		return nil, fmt.Errorf("new chat completion: %w", err)
+	}
+
+	return choice, nil
 }
