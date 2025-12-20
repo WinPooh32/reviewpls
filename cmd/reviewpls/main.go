@@ -49,6 +49,7 @@ func main() {
 	gitHeadBaranch := flag.String("git-branch-head", "feature-1234", "head branch name")
 	gitRootDir := flag.String("git-root-dir", ".", "root path to a git repository directory")
 	model := flag.String("model", "gpt-4", "model name")
+
 	flag.Parse()
 
 	repo, err := gitrepo.OpenRepository(ctx, *gitRootDir)
