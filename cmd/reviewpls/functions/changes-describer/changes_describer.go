@@ -96,7 +96,7 @@ func (c *ChangesDescriber) describeFileChanges(ctx context.Context, file, filePa
 	return &summ, nil
 }
 
-func (c *ChangesDescriber) explainChanges(ctx context.Context, contextMessages []openai.ChatCompletionMessageParamUnion, filePatch string) (*openai.ChatCompletionChoice, error) {
+func (c *ChangesDescriber) explainChanges(ctx context.Context, history []openai.ChatCompletionMessageParamUnion, filePatch string) (*openai.ChatCompletionChoice, error) {
 	task, err := c.prompts.Format("describe_changes_0", map[string]any{"Patch": filePatch})
 	if err != nil {
 		return nil, errors.Join(err, retry.ErrFatal)
@@ -104,7 +104,7 @@ func (c *ChangesDescriber) explainChanges(ctx context.Context, contextMessages [
 
 	params := openai.ChatCompletionNewParams{
 		Model:    c.cfg.Model,
-		Messages: append(slices.Clone(contextMessages), openai.UserMessage(task)),
+		Messages: append(slices.Clone(history), openai.UserMessage(task)),
 	}
 
 	choice, err := chat.NewCompletion(ctx, c.cli.Chat.Completions, params)
@@ -115,7 +115,7 @@ func (c *ChangesDescriber) explainChanges(ctx context.Context, contextMessages [
 	return choice, nil
 }
 
-func (c *ChangesDescriber) criticChanges(ctx context.Context, contextMessages []openai.ChatCompletionMessageParamUnion) (*openai.ChatCompletionChoice, error) {
+func (c *ChangesDescriber) criticChanges(ctx context.Context, history []openai.ChatCompletionMessageParamUnion) (*openai.ChatCompletionChoice, error) {
 	task, err := c.prompts.Format("describe_changes_1", map[string]any{"JSONSchema": responseChangesSchema})
 	if err != nil {
 		return nil, errors.Join(err, retry.ErrFatal)
@@ -123,7 +123,8 @@ func (c *ChangesDescriber) criticChanges(ctx context.Context, contextMessages []
 
 	params := openai.ChatCompletionNewParams{
 		Model:    c.cfg.Model,
-		Messages: append(slices.Clone(contextMessages), openai.UserMessage(task)),
+		Messages: append(slices.Clone(history), openai.UserMessage(task)),
+
 		ResponseFormat: openai.ChatCompletionNewParamsResponseFormatUnion{
 			OfJSONSchema: &shared.ResponseFormatJSONSchemaParam{
 				Type: "json_object",
