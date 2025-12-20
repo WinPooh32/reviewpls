@@ -69,18 +69,18 @@ func (c *ChangesDescriber) describeFileChanges(ctx context.Context, file, filePa
 		return nil, errors.Join(err, retry.ErrFatal)
 	}
 
-	contextMessages := []openai.ChatCompletionMessageParamUnion{
+	history := []openai.ChatCompletionMessageParamUnion{
 		openai.SystemMessage(contextMessage),
 	}
 
-	choice, err := c.explainChanges(ctx, contextMessages, filePatch)
+	choice, err := c.explainChanges(ctx, history, filePatch)
 	if err != nil {
 		return nil, errors.Join(err, retry.ErrFatal)
 	}
 
-	contextMessages = append(contextMessages, choice.Message.ToParam())
+	history = append(history, choice.Message.ToParam())
 
-	choice, err = c.criticChanges(ctx, contextMessages)
+	choice, err = c.criticChanges(ctx, history)
 	if err != nil {
 		return nil, errors.Join(err, retry.ErrFatal)
 	}
