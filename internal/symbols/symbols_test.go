@@ -35,7 +35,7 @@ func main() {
 	return
 }`
 
-	wantSymbols := []symbols.Line{
+	wantSymbols := symbols.Lines{
 		{N: 1, Symbols: []symbols.Symbol{{Column: 9, Name: "main"}}},
 		{N: 5, Symbols: []symbols.Symbol{{Column: 6, Name: "main"}}},
 		{N: 6, Symbols: []symbols.Symbol{{Column: 2, Name: "fmt"}, {Column: 6, Name: "Println"}}},
