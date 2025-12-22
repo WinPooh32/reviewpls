@@ -72,6 +72,7 @@ func main() {
 	cd, err := changesdescriber.New(
 		changesdescriber.ChangesDescriberConfig{
 			Model:            *model,
+			Temperature:      defaultTemperature,
 			RetryMaxAttempts: maxRetries,
 			RetryDelay:       0,
 		},

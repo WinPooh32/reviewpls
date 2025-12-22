@@ -19,6 +19,7 @@ import (
 
 type ChangesDescriberConfig struct {
 	Model            string
+	Temperature      float64
 	RetryMaxAttempts int
 	RetryDelay       time.Duration
 }
@@ -103,8 +104,9 @@ func (c *ChangesDescriber) explainChanges(ctx context.Context, history []openai.
 	}
 
 	params := openai.ChatCompletionNewParams{
-		Model:    c.cfg.Model,
-		Messages: append(slices.Clone(history), openai.UserMessage(task)),
+		Model:       c.cfg.Model,
+		Temperature: openai.Float(c.cfg.Temperature),
+		Messages:    append(slices.Clone(history), openai.UserMessage(task)),
 	}
 
 	choice, err := chat.NewCompletion(ctx, c.cli.Chat.Completions, params)
@@ -122,8 +124,9 @@ func (c *ChangesDescriber) criticChanges(ctx context.Context, history []openai.C
 	}
 
 	params := openai.ChatCompletionNewParams{
-		Model:    c.cfg.Model,
-		Messages: append(slices.Clone(history), openai.UserMessage(task)),
+		Model:       c.cfg.Model,
+		Temperature: openai.Float(c.cfg.Temperature),
+		Messages:    append(slices.Clone(history), openai.UserMessage(task)),
 
 		ResponseFormat: openai.ChatCompletionNewParamsResponseFormatUnion{
 			OfJSONSchema: &shared.ResponseFormatJSONSchemaParam{
