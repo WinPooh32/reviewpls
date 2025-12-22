@@ -107,7 +107,10 @@ func atLine(tree *tree_sitter.Tree, source []byte, line int) ([]Symbol, error) {
 			nodeKind := node.Kind()
 
 			if _, found := interestedKinds[nodeKind]; found {
-				symbols = append(symbols, Symbol{Column: node.StartPosition().Column, Name: node.Utf8Text(source)})
+				symbols = append(symbols, Symbol{
+					Column: node.StartPosition().Column + 1,
+					Name:   node.Utf8Text(source)},
+				)
 			}
 		}
 

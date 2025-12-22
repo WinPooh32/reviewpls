@@ -36,11 +36,11 @@ func main() {
 }`
 
 	wantSymbols := []symbols.Line{
-		{N: 1, Symbols: []symbols.Symbol{{Column: 8, Name: "main"}}},
-		{N: 5, Symbols: []symbols.Symbol{{Column: 5, Name: "main"}}},
-		{N: 6, Symbols: []symbols.Symbol{{Column: 1, Name: "fmt"}, {Column: 5, Name: "Println"}}},
-		{N: 7, Symbols: []symbols.Symbol{{Column: 1, Name: "x"}}},
-		{N: 8, Symbols: []symbols.Symbol{{Column: 1, Name: "y"}, {Column: 6, Name: "x"}}},
+		{N: 1, Symbols: []symbols.Symbol{{Column: 9, Name: "main"}}},
+		{N: 5, Symbols: []symbols.Symbol{{Column: 6, Name: "main"}}},
+		{N: 6, Symbols: []symbols.Symbol{{Column: 2, Name: "fmt"}, {Column: 6, Name: "Println"}}},
+		{N: 7, Symbols: []symbols.Symbol{{Column: 2, Name: "x"}}},
+		{N: 8, Symbols: []symbols.Symbol{{Column: 2, Name: "y"}, {Column: 7, Name: "x"}}},
 	}
 
 	err := writeTestFile(tempFile, testCode)
