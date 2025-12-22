@@ -46,6 +46,22 @@ func main() {
 	err := writeTestFile(tempFile, testCode)
 	require.NoError(t, err)
 
+	t.Run("Test full range as string", func(t *testing.T) {
+		t.Parallel()
+
+		const wantString = `1: [{9 main}]
+5: [{6 main}]
+6: [{2 fmt} {6 Println}]
+7: [{2 x}]
+8: [{2 y} {7 x}]
+`
+
+		result, err := symbols.AtRange(tempFile, 0, -1)
+		require.NoError(t, err)
+
+		assert.Equal(t, wantString, result.String())
+	})
+
 	t.Run("Test full range", func(t *testing.T) {
 		t.Parallel()
 

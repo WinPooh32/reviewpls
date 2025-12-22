@@ -29,7 +29,19 @@ type Symbol struct {
 	Name   string
 }
 
-func AtRange(sourcePath string, begin, end int) ([]Line, error) {
+type Lines []Line
+
+func (lines Lines) String() string {
+	var sb strings.Builder
+
+	for _, l := range lines {
+		sb.WriteString(fmt.Sprintf("%d: %v\n", l.N, l.Symbols))
+	}
+
+	return sb.String()
+}
+
+func AtRange(sourcePath string, begin, end int) (Lines, error) {
 	scanAll := begin == 0 && end < 1
 	untilEnd := begin > 0 && end < 1
 
