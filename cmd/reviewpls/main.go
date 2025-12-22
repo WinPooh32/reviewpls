@@ -26,6 +26,10 @@ const (
 	errorCodeHasComments = 2
 )
 
+const (
+	defaultTemperature = 0.1
+)
+
 var errHasReviewComments = errors.New("has review comments")
 
 func main() {
@@ -45,20 +49,45 @@ func main() {
 
 	ctx = slogutil.WithContext(ctx, logger)
 
+	deps, err := assembleDependencies(ctx)
+	if err != nil {
+		logger.Error("assemble dependencies", slog.String("error", err.Error()))
+
+		exitCode = errorCodeUnknown
+
+		return
+	}
+
+	if err := run(ctx, deps); err != nil {
+		logger.Error("run", slog.String("error", err.Error()))
+
+		if errors.Is(err, errHasReviewComments) {
+			exitCode = errorCodeHasComments
+		} else {
+			exitCode = errorCodeUnknown
+		}
+
+		return
+	}
+}
+
+type Dependencies struct {
+	Mr MergeRequest
+	Pf PipelineFunctions
+}
+
+func assembleDependencies(ctx context.Context) (*Dependencies, error) {
 	gitBaseBranch := flag.String("git-branch-base", "master", "base git repositroy branch name")
 	gitHeadBaranch := flag.String("git-branch-head", "feature-1234", "head branch name")
 	gitRootDir := flag.String("git-root-dir", ".", "root path to a git repository directory")
+	language := flag.String("language", "english", "commentary language")
 	model := flag.String("model", "gpt-4", "model name")
 
 	flag.Parse()
 
 	repo, err := gitrepo.OpenRepository(ctx, *gitRootDir)
 	if err != nil {
-		logger.Error("run", slog.String("error", err.Error()))
-
-		exitCode = errorCodeUnknown
-
-		return
+		return nil, fmt.Errorf("gitrepo: open repository: %w", err)
 	}
 
 	openaiClient := openai.NewClient()
@@ -79,22 +108,25 @@ func main() {
 		openaiClient,
 	)
 
+	rv, err := reviewer.New(
+		reviewer.ChangesDescriberConfig{
+			Model:              *model,
+			RetryMaxAttempts:   maxRetries,
+			RetryDelay:         0,
+			CommentaryLanguage: strings.ToLower(*language),
+		},
+		openaiClient, *model,
+	)
+
 	pf := PipelineFunctions{
 		ChangesDescriber: cd,
-		Reviewer:         reviewer.New(openaiClient, *model),
+		Reviewer:         rv,
 	}
 
-	if err := run(ctx, mr, pf); err != nil {
-		logger.Error("run", slog.String("error", err.Error()))
-
-		if errors.Is(err, errHasReviewComments) {
-			exitCode = errorCodeHasComments
-		} else {
-			exitCode = errorCodeUnknown
-		}
-
-		return
-	}
+	return &Dependencies{
+		Mr: mr,
+		Pf: pf,
+	}, nil
 }
 
 type MergeRequest struct {
@@ -108,8 +140,8 @@ type PipelineFunctions struct {
 	Reviewer         functions.Reviewer
 }
 
-func run(ctx context.Context, mr MergeRequest, pf PipelineFunctions) error {
-	files, err := mr.Repo.DiffFiles(ctx, mr.BaseBranch, mr.HeadBranch)
+func run(ctx context.Context, dp *Dependencies) error {
+	files, err := dp.Mr.Repo.DiffFiles(ctx, dp.Mr.BaseBranch, dp.Mr.HeadBranch)
 	if err != nil {
 		return fmt.Errorf("get repo merge request diff files; %w", err)
 	}
@@ -118,7 +150,7 @@ func run(ctx context.Context, mr MergeRequest, pf PipelineFunctions) error {
 		return nil
 	}
 
-	diffCommits, err := mr.Repo.DiffCommits(ctx, mr.BaseBranch, mr.HeadBranch)
+	diffCommits, err := dp.Mr.Repo.DiffCommits(ctx, dp.Mr.BaseBranch, dp.Mr.HeadBranch)
 	if err != nil {
 		return fmt.Errorf("get repo diff commits; %w", err)
 	}
@@ -130,7 +162,7 @@ func run(ctx context.Context, mr MergeRequest, pf PipelineFunctions) error {
 			continue
 		}
 
-		patch, err := mr.Repo.BlamePatch(ctx, mr.HeadBranch, diffCommits, file)
+		patch, err := dp.Mr.Repo.BlamePatch(ctx, dp.Mr.HeadBranch, diffCommits, file)
 		if err != nil {
 			return fmt.Errorf("get repo blame patch for the file %q: %w", file, err)
 		}
@@ -143,7 +175,7 @@ func run(ctx context.Context, mr MergeRequest, pf PipelineFunctions) error {
 
 		slogutil.Ctx(ctx).Debug("blame patch", slog.String("file", file), slog.String("patch", patchStr))
 
-		summ, err := pf.ChangesDescriber.DescribeFileChanges(ctx, file, patchStr)
+		summ, err := dp.Pf.ChangesDescriber.DescribeFileChanges(ctx, file, patchStr)
 		if err != nil {
 			return fmt.Errorf("describe file changes of %q: %w", file, err)
 		}
@@ -151,9 +183,24 @@ func run(ctx context.Context, mr MergeRequest, pf PipelineFunctions) error {
 		summaries = append(summaries, summ)
 	}
 
-	comments, err := pf.Reviewer.AnalyzeChangesSummary(ctx, summaries)
-	if err != nil {
-		return fmt.Errorf("reviewer: analyze summaries: %w", err)
+	slogutil.Ctx(ctx).Info("describe changes", slog.Any("summary", summaries))
+
+	var comments []*functions.ReviewComment
+
+	for _, summ := range summaries {
+		if len(summ.Hypotheses) == 0 {
+			continue
+		}
+
+		comment, err := dp.Pf.Reviewer.AnalyzeChangesSummary(ctx, summ)
+		if err != nil {
+			return fmt.Errorf("reviewer: analyze summaries: %w", err)
+		}
+
+		if len(comment.Text) == 0 {
+			slogutil.Ctx(ctx).Warn("empty commentary text, then skip it", slog.String("file", summ.File))
+			continue
+		}
 	}
 
 	if len(comments) == 0 {

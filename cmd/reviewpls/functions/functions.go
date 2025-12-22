@@ -20,11 +20,12 @@ type ChangesDescriber interface {
 }
 
 type ReviewComment struct {
-	File string
-	Line int
-	Text string
+	File     string
+	Line     int
+	Text     string
+	Language string
 }
 
 type Reviewer interface {
-	AnalyzeChangesSummary(ctx context.Context, summaries []*ChangesSummary) ([]*ReviewComment, error)
+	AnalyzeChangesSummary(ctx context.Context, summary *ChangesSummary) (*ReviewComment, error)
 }
